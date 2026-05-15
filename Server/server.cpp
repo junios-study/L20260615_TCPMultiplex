@@ -51,7 +51,7 @@ int main()
 		{
 			//실 서버 작업을 하는거임
 			//tick
-			printf("Nothing %d\n", ++Count);
+			//printf("Nothing %d\n", ++Count);
 			continue;
 		}
 
