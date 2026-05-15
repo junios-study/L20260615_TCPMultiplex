@@ -20,15 +20,52 @@
 unsigned 경준이돈 = 10000;
 //std::atomic<long> 경준이돈 = 10000;
 
+std::atomic<long> LockObject;
+
+//spin lock
 CRITICAL_SECTION 경준이돈CS1;
 CRITICAL_SECTION 경준이돈CS2;
 
 std::mutex 경준이돈Mutex;
 
+volatile long Lock = 0; //0: unlock, 1:lock
+
+#define SPINLOCK(LOCK)  while (InterlockedCompareExchange(LOCK, 1, 0) != 0) \
+{\
+ YieldProcessor();\
+}
+
+#define SPINUNLOCK(LOCK)  InterlockedExchange(LOCK, 0)
+
+//EnterCritialSection, mutex.lock()
+void SpinLock(volatile long* Lock)
+{
+	//spinlock
+	int SpinCount = 0;
+	const int MaxSpintCount = 10;
+
+	while (InterlockedCompareExchange(Lock, 1, 0) != 0)
+	{
+		SpinCount++;
+		if (SpinCount > MaxSpintCount)
+		{
+			Sleep(0);
+			SpinCount = 0;
+		}
+
+		YieldProcessor();
+	}
+}
+
+void SpinUnlock(volatile long* Lock)
+{
+	//atomic
+	InterlockedExchange(Lock, 0);
+}
+
 
 unsigned Increasement(void* Argument)
 {
-
 	for (int i = 0; i < 1000000; ++i)
 	{
 
@@ -39,13 +76,16 @@ unsigned Increasement(void* Argument)
 		//EnterCriticalSection(&경준이돈CS1);
 		//EnterCriticalSection(&경준이돈CS2);
 		//경준이돈Mutex.lock();
-		std::lock_guard<std::mutex> lock(경준이돈Mutex);
+		//std::lock_guard<std::mutex> lock(경준이돈Mutex);
+		//SpinLock(&Lock); //안 잠겼으면 잠근다.
+		SPINLOCK(&Lock);
 		경준이돈++;
+		SPINUNLOCK(&Lock);
 		//경준이돈Mutex.unlock();
 
 		//LeaveCriticalSection(&경준이돈CS2);
 		//LeaveCriticalSection(&경준이돈CS1);
-		//1. 글로벌 변수 접근(숫자 가져오기)
+		//1. 글로벌 수 접근(숫자 가져오기)
 		//2. 가져온 숫자에 +1
 		//3. 다시 글로벌 변수에 저장
 		//문열고
@@ -68,10 +108,16 @@ unsigned Decreasement(void* Argument)
 		//EnterCriticalSection(&경준이돈CS1);
 		//EnterCriticalSection(&경준이돈CS2);
 
-		std::lock_guard<std::mutex> lock(경준이돈Mutex);
+
+
+		SpinLock(&Lock); //안 잠겼으면 잠근다.
+
 		//경준이돈Mutex.lock();
 		경준이돈--;
 		//경준이돈Mutex.unlock();
+
+		SpinUnlock(&Lock);
+
 
 		//LeaveCriticalSection(&경준이돈CS1);
 		//LeaveCriticalSection(&경준이돈CS2);
