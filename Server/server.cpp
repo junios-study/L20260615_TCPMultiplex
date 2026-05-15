@@ -81,7 +81,23 @@ int main()
 					}
 					else
 					{
+						//PacketType
 						printf("client send : %s\n", Buffer);
+
+						for (int j = 0; j < (int)ReadSockets.fd_count; ++j)
+						{
+							if (ReadSockets.fd_array[i] != ListenSocket)
+							{
+								int SentBytes = send(ReadSockets.fd_array[i], Buffer, (int)strlen(Buffer), 0);
+								if (SentBytes <= 0)
+								{
+									SOCKET ClosedSocket = ReadSockets.fd_array[i];
+									printf("disconnect client.\n");
+									FD_CLR(ReadSockets.fd_array[i], &ReadSockets);
+									closesocket(ClosedSocket);
+								}
+							}
+						}
 					}
 				}
 			}
