@@ -12,6 +12,7 @@
 
 #include <atomic>
 #include <thread>
+#include <mutex>
 
 #pragma comment(lib, "winmm")
 #pragma comment(lib, "ws2_32")
@@ -21,6 +22,8 @@ unsigned 경준이돈 = 10000;
 
 CRITICAL_SECTION 경준이돈CS1;
 CRITICAL_SECTION 경준이돈CS2;
+
+std::mutex 경준이돈Mutex;
 
 
 unsigned Increasement(void* Argument)
@@ -33,11 +36,15 @@ unsigned Increasement(void* Argument)
 		//원자적으로 작업(원자적으로 더하기)
 		//InterlockedIncrement(&경준이돈); //windows 전용
 		//경준이돈.fetch_add(1);
-		EnterCriticalSection(&경준이돈CS1);
-		EnterCriticalSection(&경준이돈CS2);
+		//EnterCriticalSection(&경준이돈CS1);
+		//EnterCriticalSection(&경준이돈CS2);
+		//경준이돈Mutex.lock();
+		std::lock_guard<std::mutex> lock(경준이돈Mutex);
 		경준이돈++;
-		LeaveCriticalSection(&경준이돈CS2);
-		LeaveCriticalSection(&경준이돈CS1);
+		//경준이돈Mutex.unlock();
+
+		//LeaveCriticalSection(&경준이돈CS2);
+		//LeaveCriticalSection(&경준이돈CS1);
 		//1. 글로벌 변수 접근(숫자 가져오기)
 		//2. 가져온 숫자에 +1
 		//3. 다시 글로벌 변수에 저장
@@ -58,11 +65,16 @@ unsigned Decreasement(void* Argument)
 		//원자적
 		//InterlockedDecrement(&경준이돈);
 		//경준이돈.fetch_sub(1);
-		EnterCriticalSection(&경준이돈CS1);
-		EnterCriticalSection(&경준이돈CS2);
+		//EnterCriticalSection(&경준이돈CS1);
+		//EnterCriticalSection(&경준이돈CS2);
+
+		std::lock_guard<std::mutex> lock(경준이돈Mutex);
+		//경준이돈Mutex.lock();
 		경준이돈--;
-		LeaveCriticalSection(&경준이돈CS1);
-		LeaveCriticalSection(&경준이돈CS2);
+		//경준이돈Mutex.unlock();
+
+		//LeaveCriticalSection(&경준이돈CS1);
+		//LeaveCriticalSection(&경준이돈CS2);
 		//1. 글로벌 변수 접근(숫자 가져오기)
 		//2. 가져온 숫자에 -1
 		//3. 다시 글로벌 변수에 저장
